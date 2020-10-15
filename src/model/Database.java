@@ -21,7 +21,7 @@ public class Database {
     //
 
     // This is the object that connects us to our database.
-    private Connection connection = null;
+    private Connection connection;
 
     /**
      * This constructor establishes a connection with our primary database.
@@ -40,7 +40,7 @@ public class Database {
      *
      * @return An arraylist holding all of the users in the database.
      */
-    public ArrayList<User> getDatabaseSongs() throws SQLException {
+    public ArrayList<User> getUserList() throws SQLException {
         return null;
     }
 }

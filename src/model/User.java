@@ -1,11 +1,14 @@
 package model;
 
-import java.util.ArrayList;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class User {
 
-    private int userID;
-    private ArrayList<Song> ownedSongs;
-    private ArrayList<Song> playedSongs;
+    private int user_id;
+
+    public User(ResultSet set) throws SQLException {
+        this.user_id = set.getInt(0);
+    }
 
 }
