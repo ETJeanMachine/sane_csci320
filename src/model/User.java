@@ -5,10 +5,14 @@ import java.sql.SQLException;
 
 public class User {
 
-    private int user_id;
+    private final int user_id;
 
     public User(ResultSet set) throws SQLException {
-        this.user_id = set.getInt(0);
+        this.user_id = set.getInt(1);
+    }
+
+    public int getUser_id() {
+        return user_id;
     }
 
 }

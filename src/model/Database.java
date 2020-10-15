@@ -21,7 +21,7 @@ public class Database {
     //
 
     // This is the object that connects us to our database.
-    private Connection connection;
+    private final Connection connection;
 
     /**
      * This constructor establishes a connection with our primary database.
@@ -41,6 +41,12 @@ public class Database {
      * @return An arraylist holding all of the users in the database.
      */
     public ArrayList<User> getUserList() throws SQLException {
-        return null;
+        Statement stmt = connection.createStatement();
+        ResultSet currentUser = stmt.executeQuery("select * from users");
+        ArrayList<User> userList = new ArrayList<>();
+        while (currentUser.next()) {
+            userList.add(new User(currentUser));
+        }
+        return userList;
     }
 }

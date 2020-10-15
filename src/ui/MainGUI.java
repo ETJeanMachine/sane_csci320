@@ -15,6 +15,8 @@ import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import model.Database;
 
+import java.sql.SQLException;
+
 public class MainGUI extends Application {
 
     public static final int GUI_WIDTH = 800;
@@ -23,7 +25,7 @@ public class MainGUI extends Application {
 
     private final GridPane mainPane = new GridPane();
     private final GridPane loginPane = new GridPane();
-    private final String title = "S.A.N.E Database Manager";
+    private final Text title = new Text("S.A.N.E Database Manager");
     private DatabaseGUI dbGUI;
 
     /**
@@ -45,17 +47,25 @@ public class MainGUI extends Application {
             // We attempt to login to the database when we enter the password,
             try {
                 dbGUI = new DatabaseGUI(new Database(passField.getText()));
-                mainPane.getChildren().remove(loginPane);
-                mainPane.addRow(1, dbGUI);
+                mainPane.getChildren().removeAll(loginPane, title);
+                mainPane.setAlignment(Pos.TOP_LEFT);
+                mainPane.addRow(0, dbGUI);
             } catch (Exception e) {
                 passField.setText("");
-                // Making sure we don't set it multiple times.
-                if (loginPane.getRowCount() != 2) {
-                    Text error = new Text("Login failed, try again.");
-                    error.setFont(mainFont);
-                    error.setFill(Color.RED);
-                    loginPane.addRow(1, error);
+                String errorText;
+                if(e.getMessage().contains("password")) {
+                    errorText = "Incorrect login, try again.";
+                } else {
+                    errorText = "Internal database error, check stack trace.";
+                    e.printStackTrace();
                 }
+                Text error = new Text(errorText);
+                error.setFont(mainFont);
+                error.setFill(Color.RED);
+                if(loginPane.getRowCount() == 2) {
+                    loginPane.getChildren().remove(2);
+                }
+                loginPane.addRow(1, error);
             }
         });
         loginPane.addRow(0, loginText, passField);
@@ -65,12 +75,11 @@ public class MainGUI extends Application {
 
     public void init() {
         // Sets the header and the main pane for the application that will never change.
-        Text titleHeader = new Text(title);
         Font titleFont = new Font("Arial Bold", 24);
-        titleHeader.setFont(titleFont);
-        titleHeader.setUnderline(true);
-        GridPane.setHalignment(titleHeader, HPos.CENTER);
-        mainPane.addRow(0, titleHeader);
+        title.setFont(titleFont);
+        title.setUnderline(true);
+        GridPane.setHalignment(title, HPos.CENTER);
+        mainPane.addRow(0, title);
         mainPane.setAlignment(Pos.TOP_CENTER);
         mainPane.setVgap(5);
         renderLogin();
@@ -82,7 +91,7 @@ public class MainGUI extends Application {
         stage.setResizable(false);
         stage.setHeight(GUI_HEIGHT);
         stage.setWidth(GUI_WIDTH);
-        stage.setTitle(title);
+        stage.setTitle(title.getText());
         Scene scene = new Scene(mainPane);
         stage.setScene(scene);
         // Displaying the stage.
