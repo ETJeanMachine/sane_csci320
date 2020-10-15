@@ -22,11 +22,6 @@ public class Database {
 
     // This is the object that connects us to our database.
     private Connection connection = null;
-    // These hashmaps store the database items.
-    private HashMap<Integer, Album> databaseAlbums = new HashMap<>();
-    private HashMap<Integer, Song> databaseSongs = new HashMap<>();
-    private HashMap<Integer, Artist> databaseArtists = new HashMap<>();
-    private HashMap<Integer, User> databaseUsers = new HashMap<>();
 
     /**
      * This constructor establishes a connection with our primary database.
@@ -38,27 +33,14 @@ public class Database {
             String url = "jdbc:postgresql://reddwarf.cs.rit.edu:5432/" + username;
             this.connection = DriverManager.getConnection(url, username, password);
             connection.setAutoCommit(false);
-            buildDatabase();
-    }
-
-    /**
-     * This interprets and builds our Database into a database Java model.
-     * @throws SQLException If there is an error while parsing the database.
-     */
-    private void buildDatabase() throws SQLException {
-        Statement stmt = connection.createStatement();
-        ResultSet set = stmt.executeQuery("select * from song");
-        while(set.next()) {
-            Song thisSong = new Song(set);
-            databaseSongs.put(thisSong.getSong_id(), thisSong);
-        }
     }
 
     /**
      * Returns all the songs within the database.
-     * @return A collection holding every single song.
+     *
+     * @return An arraylist holding all of the users in the database.
      */
-    public Collection<Song> getDatabaseSongs() {
-        return databaseSongs.values();
+    public ArrayList<User> getDatabaseSongs() throws SQLException {
+        return null;
     }
 }
