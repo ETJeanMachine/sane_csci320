@@ -1,24 +1,16 @@
 import model.Song;
-import ui.Database;
+import model.Database;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.util.Collection;
+import java.util.Iterator;
 
 public class Application {
 
     public static void main(String[] args) {
         Database db = new Database();
-        try {
-            Statement stmt = db.getStatement();
-            Song song = new Song(0, stmt);
+        Collection<Song> songs = db.getDatabaseSongs();
+        for (Song song : songs) {
             System.out.println(song);
-            stmt.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            System.err.println(e.getClass().getName() + ": " + e.getMessage());
-            System.exit(1);
         }
-        System.out.println("Success!");
     }
 }

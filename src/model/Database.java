@@ -1,8 +1,11 @@
-package ui;
+package model;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Properties;
 
 /**
@@ -27,6 +30,10 @@ public class Database {
     //
 
     private Connection connection = null;
+    private HashMap<Integer, Album> databaseAlbums = new HashMap<>();
+    private HashMap<Integer, Song> databaseSongs = new HashMap<>();
+    private HashMap<Integer, Artist> databaseArtists = new HashMap<>();
+    private HashMap<Integer, User> databaseUsers = new HashMap<>();
 
     /**
      * This constructor establishes a connection with our primary database.
@@ -36,6 +43,7 @@ public class Database {
             Class.forName("org.postgresql.Driver");
             this.connection = DriverManager.getConnection(url, username, password);
             connection.setAutoCommit(false);
+            buildDatabase();
         } catch (Exception e) {
             e.printStackTrace();
             System.err.println(e.getClass().getName() + ": " + e.getMessage());
@@ -63,11 +71,19 @@ public class Database {
     }
 
     /**
-     * Returns a statement to be made to to the database.
-     *
-     * @return The SQL connection object.
+     * This interprets and builds our Database into a database Java model.
+     * @throws SQLException If there is an error while parsing the database.
      */
-    public Statement getStatement() throws SQLException {
-        return this.connection.createStatement();
+    private void buildDatabase() throws SQLException {
+        Statement stmt = connection.createStatement();
+        ResultSet set = stmt.executeQuery("select * from song");
+        while(set.next()) {
+            Song thisSong = new Song(set);
+            databaseSongs.put(thisSong.getSong_id(), thisSong);
+        }
+    }
+
+    public Collection<Song> getDatabaseSongs() {
+        return databaseSongs.values();
     }
 }
