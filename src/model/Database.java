@@ -15,21 +15,14 @@ import java.util.Properties;
  */
 public class Database {
 
-    //
-    // Constants
-    //
-
-    // These constants are used to parse a properties file that is securely stored on our computer, as to not disturb unwanted access to the database.
-    private static final Properties prop = readPropertiesFile();
-    private static final String username = prop.getProperty("username");
-    private static final String password = prop.getProperty("password");
-    private static final String url = "jdbc:postgresql://reddwarf.cs.rit.edu:5432/" + username;
 
     //
     // Attributes
     //
 
+    // This is the object that connects us to our database.
     private Connection connection = null;
+    // These hashmaps store the database items.
     private HashMap<Integer, Album> databaseAlbums = new HashMap<>();
     private HashMap<Integer, Song> databaseSongs = new HashMap<>();
     private HashMap<Integer, Artist> databaseArtists = new HashMap<>();
@@ -38,9 +31,12 @@ public class Database {
     /**
      * This constructor establishes a connection with our primary database.
      */
-    public Database() {
+    public Database(String password) {
         try {
             Class.forName("org.postgresql.Driver");
+            // These constants are used to parse a properties file that is securely stored on our computer, as to not disturb unwanted access to the database.
+            String username = "p320_14";
+            String url = "jdbc:postgresql://reddwarf.cs.rit.edu:5432/" + username;
             this.connection = DriverManager.getConnection(url, username, password);
             connection.setAutoCommit(false);
             buildDatabase();
@@ -49,25 +45,6 @@ public class Database {
             System.err.println(e.getClass().getName() + ": " + e.getMessage());
             System.exit(1);
         }
-    }
-
-    /**
-     * Parses the properties file for our values we don't want publicly seen (the username and password for our database).
-     *
-     * @return The parsed properties file.
-     */
-    private static Properties readPropertiesFile() {
-        FileInputStream inputStream;
-        Properties prop = null;
-        try {
-            inputStream = new FileInputStream("credentials.properties");
-            prop = new Properties();
-            prop.load(inputStream);
-            inputStream.close();
-        } catch (IOException fnfe) {
-            fnfe.printStackTrace();
-        }
-        return prop;
     }
 
     /**
@@ -83,6 +60,10 @@ public class Database {
         }
     }
 
+    /**
+     * Returns all the songs within the database.
+     * @return A collection holding every single song.
+     */
     public Collection<Song> getDatabaseSongs() {
         return databaseSongs.values();
     }
