@@ -1,9 +1,8 @@
-package database;
+package ui;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
+import java.sql.*;
 import java.util.Properties;
 
 /**
@@ -64,11 +63,11 @@ public class Database {
     }
 
     /**
-     * Returns the connection to the database.
+     * Returns a statement to be made to to the database.
      *
      * @return The SQL connection object.
      */
-    public Connection getConnection() {
-        return this.connection;
+    public Statement getStatement() throws SQLException {
+        return this.connection.createStatement();
     }
 }

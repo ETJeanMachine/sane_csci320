@@ -1,4 +1,5 @@
-import database.Database;
+import model.Song;
+import ui.Database;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -9,13 +10,10 @@ public class Application {
     public static void main(String[] args) {
         Database db = new Database();
         try {
-            Statement stmt = db.getConnection().createStatement();
-            ResultSet rs = stmt.executeQuery("select * from song;");
-            while(rs.next()) {
-                for(int i = 1; i < 5; i++) {
-                    System.out.println(rs.getString(i));
-                }
-            }
+            Statement stmt = db.getStatement();
+            Song song = new Song(0, stmt);
+            System.out.println(song);
+            stmt.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
