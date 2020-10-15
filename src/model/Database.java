@@ -31,8 +31,7 @@ public class Database {
     /**
      * This constructor establishes a connection with our primary database.
      */
-    public Database(String password) {
-        try {
+    public Database(String password) throws Exception {
             Class.forName("org.postgresql.Driver");
             // These constants are used to parse a properties file that is securely stored on our computer, as to not disturb unwanted access to the database.
             String username = "p320_14";
@@ -40,11 +39,6 @@ public class Database {
             this.connection = DriverManager.getConnection(url, username, password);
             connection.setAutoCommit(false);
             buildDatabase();
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.err.println(e.getClass().getName() + ": " + e.getMessage());
-            System.exit(1);
-        }
     }
 
     /**
