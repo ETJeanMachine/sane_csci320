@@ -22,7 +22,8 @@ public class MainGUI extends Application {
 
     public static final int GUI_WIDTH = 800;
     public static final int GUI_HEIGHT = 600;
-    public final Font mainFont = new Font("Arial", 14);
+    public static Stage stage;
+    public static final Font mainFont = new Font("Arial", 14);
 
     private final BorderPane mainPane = new BorderPane();
     private final Text title = new Text("S.A.N.E Database Manager");
@@ -84,6 +85,7 @@ public class MainGUI extends Application {
 
     @Override
     public void start(Stage stage) {
+        this.stage = stage;
         // Setting up our stage components
         stage.setHeight(GUI_HEIGHT);
         stage.setWidth(GUI_WIDTH);

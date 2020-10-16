@@ -1,20 +1,17 @@
 package ui;
 
-import javafx.beans.Observable;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.RowConstraints;
-import javafx.util.Callback;
+import javafx.geometry.Insets;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Text;
+import javafx.stage.Popup;
 import model.*;
-import org.jetbrains.annotations.NotNull;
 
-import java.sql.Date;
 import java.sql.SQLException;
-import java.util.ArrayList;
 
 public class DatabaseGUI extends BorderPane {
 
@@ -29,15 +26,12 @@ public class DatabaseGUI extends BorderPane {
 
     private void renderGUI() throws SQLException {
         Menu userMenu = new Menu("Users");
-        ArrayList<User> userList = db.getAllItems(User.class);
-        for(User u : userList) {
-            MenuItem userItem = new MenuItem(u.getID() + "");
-            userItem.setOnAction(actionEvent -> {
-                currentUser = u;
-                renderLibrary();
-            });
-            userMenu.getItems().add(userItem);
-        }
+        MenuItem loginUser = new MenuItem("Login");
+        loginUser.setOnAction(actionEvent -> {
+            Popup popup = loginQuery();
+            popup.show(MainGUI.stage);
+        });
+        userMenu.getItems().add(loginUser);
         menuBar.getMenus().addAll(userMenu);
         renderBrowse();
         setTop(menuBar);
@@ -87,7 +81,7 @@ public class DatabaseGUI extends BorderPane {
     private void renderLibrary() {
         refreshScreen();
         // Checking to see if we're swapping users.
-        if(menuBar.getMenus().size() == 3) {
+        if (menuBar.getMenus().size() == 3) {
             menuBar.getMenus().remove(2);
         }
         Menu libraryMenu = new Menu("User #" + currentUser.getID() + "'s Library");
@@ -95,11 +89,44 @@ public class DatabaseGUI extends BorderPane {
     }
 
     /**
-     * Sets the center item to null.
+     * Sets the center item to null so we can refresh the screen.
      */
     private void refreshScreen() {
-        if(getCenter() != null) {
+        if (getCenter() != null) {
             setCenter(null);
         }
+    }
+
+    private Popup loginQuery() {
+        Popup popup = new Popup();
+        VBox content = new VBox();
+        HBox query = new HBox();
+        CornerRadii radii = new CornerRadii(5);
+        content.setBorder(new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, radii, BorderStroke.THIN)));
+        content.setBackground(new Background(new BackgroundFill(Color.WHITESMOKE, radii, Insets.EMPTY)));
+        Text t = new Text("Login with an existing ID or enter a new one:");
+        t.setFont(MainGUI.mainFont);
+        TextField field = new TextField();
+        HBox.setMargin(field, new Insets(5));
+        HBox.setMargin(t, new Insets(5));
+
+        field.setOnAction(actionEvent -> {
+            Text error = new Text();
+            try {
+                int id = Integer.parseInt(field.getText());
+                currentUser = db.fetchUser(id);
+                renderLibrary();
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
+
+            popup.hide();
+        });
+
+        query.getChildren().addAll(t, field);
+        content.getChildren().add(query);
+        popup.getContent().add(content);
+        popup.centerOnScreen();
+        return popup;
     }
 }

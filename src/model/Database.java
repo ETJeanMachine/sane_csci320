@@ -1,5 +1,7 @@
 package model;
 
+import org.postgresql.util.PSQLException;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
@@ -32,7 +34,7 @@ public class Database {
             String username = "p320_14";
             String url = "jdbc:postgresql://reddwarf.cs.rit.edu:5432/" + username;
             this.connection = DriverManager.getConnection(url, username, password);
-            connection.setAutoCommit(false);
+            connection.setAutoCommit(true);
     }
 
     /**
@@ -47,9 +49,7 @@ public class Database {
         ArrayList<T> dataItems = new ArrayList<>();
         Statement stmt = connection.createStatement();
         String queryParam = "";
-        if(type == User.class) {
-            queryParam = "users";
-        } else if(type == Song.class) {
+        if(type == Song.class) {
             queryParam = "song";
         } else if(type == Artist.class) {
             queryParam = "artist";
@@ -59,7 +59,6 @@ public class Database {
         ResultSet set = stmt.executeQuery("select * from " + queryParam);
         while(set.next()) {
             switch (queryParam) {
-                case "users" -> dataItems.add((T) new User(set));
                 case "song" -> dataItems.add((T) new Song(set));
                 case "artist" -> dataItems.add((T) new Artist(set));
                 case "album" -> dataItems.add((T) new Album(set));
@@ -67,6 +66,24 @@ public class Database {
         }
         set.close();
         return dataItems;
+    }
+
+    public User fetchUser (int id) throws SQLException {
+        Statement stmt = connection.createStatement();
+        ResultSet set = null;
+        set = stmt.executeQuery("select * from users where user_id=" + id);
+        set.next();
+        User user;
+        try {
+            user = new User(set);
+        } catch (PSQLException e) {
+            stmt.executeUpdate("insert into users (user_id) values (" + id + ")");
+            set = stmt.executeQuery("select * from users where user_id=" + id);
+            set.next();
+            user = new User(set);
+        }
+        set.close();
+        return user;
     }
 
 }
