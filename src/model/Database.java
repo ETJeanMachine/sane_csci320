@@ -42,11 +42,23 @@ public class Database {
      */
     public ArrayList<User> getUserList() throws SQLException {
         Statement stmt = connection.createStatement();
-        ResultSet currentUser = stmt.executeQuery("select * from users");
+        ResultSet userSet = stmt.executeQuery("select * from users");
         ArrayList<User> userList = new ArrayList<>();
-        while (currentUser.next()) {
-            userList.add(new User(currentUser));
+        while (userSet.next()) {
+            userList.add(new User(userSet));
         }
+        userSet.close();
+        stmt.close();
         return userList;
+    }
+
+    public ArrayList<Song> getAllSongs() throws SQLException {
+        Statement stmt = connection.createStatement();
+        ResultSet songSet = stmt.executeQuery("select * from song");
+        ArrayList<Song> songList = new ArrayList<>();
+        while(songSet.next()) {
+            songList.add(new Song(songSet));
+        }
+        return songList;
     }
 }

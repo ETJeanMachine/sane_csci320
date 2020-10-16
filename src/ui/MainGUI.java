@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.HPos;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.PasswordField;
@@ -23,10 +24,8 @@ public class MainGUI extends Application {
     public static final int GUI_HEIGHT = 600;
     public final Font mainFont = new Font("Arial", 14);
 
-    private final GridPane mainPane = new GridPane();
-    private final GridPane loginPane = new GridPane();
+    private final BorderPane mainPane = new BorderPane();
     private final Text title = new Text("S.A.N.E Database Manager");
-    private DatabaseGUI dbGUI;
 
     /**
      * Launches the application.
@@ -40,16 +39,17 @@ public class MainGUI extends Application {
      * Renders the login, and then sets the database object to exist.
      */
     private void renderLogin() {
+        HBox loginQuery = new HBox();
         PasswordField passField = new PasswordField();
         Text loginText = new Text("Please enter the database password for p320_14: ");
         loginText.setFont(mainFont);
         passField.setOnAction(actionEvent -> {
             // We attempt to login to the database when we enter the password,
             try {
-                dbGUI = new DatabaseGUI(new Database(passField.getText()));
-                mainPane.getChildren().removeAll(loginPane, title);
-                mainPane.setAlignment(Pos.TOP_LEFT);
-                mainPane.addRow(0, dbGUI);
+                DatabaseGUI dbGUI = new DatabaseGUI(new Database(passField.getText()));
+                mainPane.setTop(null);
+                mainPane.setBottom(null);
+                mainPane.setCenter(dbGUI);
             } catch (Exception e) {
                 passField.setText("");
                 String errorText;
@@ -62,15 +62,13 @@ public class MainGUI extends Application {
                 Text error = new Text(errorText);
                 error.setFont(mainFont);
                 error.setFill(Color.RED);
-                if(loginPane.getRowCount() == 2) {
-                    loginPane.getChildren().remove(2);
-                }
-                loginPane.addRow(1, error);
+                mainPane.setBottom(error);
             }
         });
-        loginPane.addRow(0, loginText, passField);
-        loginPane.setAlignment(Pos.CENTER);
-        mainPane.addRow(1, loginPane);
+        loginQuery.getChildren().addAll(loginText, passField);
+        loginQuery.setAlignment(Pos.TOP_CENTER);
+        BorderPane.setAlignment(loginQuery, Pos.TOP_CENTER);
+        mainPane.setCenter(loginQuery);
     }
 
     public void init() {
@@ -78,17 +76,15 @@ public class MainGUI extends Application {
         Font titleFont = new Font("Arial Bold", 24);
         title.setFont(titleFont);
         title.setUnderline(true);
-        GridPane.setHalignment(title, HPos.CENTER);
-        mainPane.addRow(0, title);
-        mainPane.setAlignment(Pos.TOP_CENTER);
-        mainPane.setVgap(5);
+        BorderPane.setAlignment(title, Pos.TOP_CENTER);
+        BorderPane.setMargin(title, new Insets(1, 0, 5, 0));
+        mainPane.setTop(title);
         renderLogin();
     }
 
     @Override
     public void start(Stage stage) {
         // Setting up our stage components
-        stage.setResizable(false);
         stage.setHeight(GUI_HEIGHT);
         stage.setWidth(GUI_WIDTH);
         stage.setTitle(title.getText());

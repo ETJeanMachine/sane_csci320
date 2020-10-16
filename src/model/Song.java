@@ -28,12 +28,16 @@ public class Song {
         this.play_count = set.getInt("play_count");
     }
 
-    public ArrayList<String> getGenres() {
-        return this.genres;
+    public int getPlay_count() {
+        return this.play_count;
     }
 
-    public int getArtist_id() {
-        return  this.album_id;
+    public int getLength() {
+        return this.length;
+    }
+
+    public String getTitle() {
+        return this.title;
     }
 
     public int getSong_id() {

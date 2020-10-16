@@ -15,4 +15,8 @@ public class User {
         return user_id;
     }
 
+    public String toString() {
+        return String.format("{user_id: %d}", user_id);
+    }
+
 }
