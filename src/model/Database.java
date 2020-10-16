@@ -2,6 +2,7 @@ package model;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.reflect.ParameterizedType;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,7 +15,6 @@ import java.util.Properties;
  * @author Eric Jean
  */
 public class Database {
-
 
     //
     // Attributes
@@ -36,29 +36,37 @@ public class Database {
     }
 
     /**
-     * Returns all the songs within the database.
+     * This generates an arraylist of DataTypes that are sent to the UI.
      *
-     * @return An arraylist holding all of the users in the database.
+     * @param type The literal type for checking.
+     * @param <T> The type parameter of our list.
+     * @return An array list of DataType items.
+     * @throws SQLException If there is an error parsing input.
      */
-    public ArrayList<User> getUserList() throws SQLException {
+    public <T extends DataType> ArrayList<T> getAllItems(Class<T> type) throws SQLException {
+        ArrayList<T> dataItems = new ArrayList<>();
         Statement stmt = connection.createStatement();
-        ResultSet userSet = stmt.executeQuery("select * from users");
-        ArrayList<User> userList = new ArrayList<>();
-        while (userSet.next()) {
-            userList.add(new User(userSet));
+        String queryParam = "";
+        if(type == User.class) {
+            queryParam = "users";
+        } else if(type == Song.class) {
+            queryParam = "song";
+        } else if(type == Artist.class) {
+            queryParam = "artist";
+        } else if(type == Album.class) {
+            queryParam = "album";
         }
-        userSet.close();
-        stmt.close();
-        return userList;
+        ResultSet set = stmt.executeQuery("select * from " + queryParam);
+        while(set.next()) {
+            switch (queryParam) {
+                case "users" -> dataItems.add((T) new User(set));
+                case "song" -> dataItems.add((T) new Song(set));
+                case "artist" -> dataItems.add((T) new Artist(set));
+                case "album" -> dataItems.add((T) new Album(set));
+            }
+        }
+        set.close();
+        return dataItems;
     }
 
-    public ArrayList<Song> getAllSongs() throws SQLException {
-        Statement stmt = connection.createStatement();
-        ResultSet songSet = stmt.executeQuery("select * from song");
-        ArrayList<Song> songList = new ArrayList<>();
-        while(songSet.next()) {
-            songList.add(new Song(songSet));
-        }
-        return songList;
-    }
 }

@@ -1,5 +1,6 @@
 package ui;
 
+import javafx.beans.Observable;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.*;
@@ -8,10 +9,10 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
 import javafx.util.Callback;
-import model.Database;
-import model.Song;
-import model.User;
+import model.*;
+import org.jetbrains.annotations.NotNull;
 
+import java.sql.Date;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
@@ -28,35 +29,59 @@ public class DatabaseGUI extends BorderPane {
 
     private void renderGUI() throws SQLException {
         Menu userMenu = new Menu("Users");
-        ArrayList<User> userList = db.getUserList();
+        ArrayList<User> userList = db.getAllItems(User.class);
         for(User u : userList) {
-            MenuItem userItem = new MenuItem(u.getUser_id() + "");
+            MenuItem userItem = new MenuItem(u.getID() + "");
             userItem.setOnAction(actionEvent -> {
                 currentUser = u;
                 renderLibrary();
             });
             userMenu.getItems().add(userItem);
         }
-        Menu browseMenu = renderBrowse();
-        menuBar.getMenus().addAll(userMenu, browseMenu);
+        menuBar.getMenus().addAll(userMenu);
+        renderBrowse();
         setTop(menuBar);
     }
 
-    private Menu renderBrowse() {
+    /**
+     * This renders the browsing menu and query's the database whenever tabs are swapped between it.
+     */
+    private void renderBrowse() {
         Menu browseMenu = new Menu("Browse");
         MenuItem browseSongs = new MenuItem("Songs");
+        MenuItem browseAlbums = new MenuItem("Albums");
+        MenuItem browseArtists = new MenuItem("Artists");
         browseSongs.setOnAction(actionEvent -> {
             refreshScreen();
+            TableBuilder<Song> builder = null;
             try {
-                TableView<Song> songs = buildSongTable(db.getAllSongs());
-                setCenter(songs);
+                builder = new TableBuilder<>(db.getAllItems(Song.class));
+                setCenter(builder.getTable());
             } catch (SQLException e) {
                 e.printStackTrace();
             }
         });
-        MenuItem browseAlbums = new MenuItem("Albums");
-        browseMenu.getItems().addAll(browseSongs, browseAlbums);
-        return browseMenu;
+        browseAlbums.setOnAction(actionEvent -> {
+            refreshScreen();
+            TableBuilder<Album> builder = null;
+            try {
+                builder = new TableBuilder<>(db.getAllItems(Album.class));
+                setCenter(builder.getTable());
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        });
+        browseArtists.setOnAction(actionEvent -> {
+            refreshScreen();
+            try {
+                TableBuilder<Artist> builder = new TableBuilder<>(db.getAllItems(Artist.class));
+                setCenter(builder.getTable());
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        });
+        browseMenu.getItems().addAll(browseSongs, browseAlbums, browseArtists);
+        menuBar.getMenus().add(browseMenu);
     }
 
     private void renderLibrary() {
@@ -65,7 +90,7 @@ public class DatabaseGUI extends BorderPane {
         if(menuBar.getMenus().size() == 3) {
             menuBar.getMenus().remove(2);
         }
-        Menu libraryMenu = new Menu("User #" + currentUser.getUser_id() + "'s Library");
+        Menu libraryMenu = new Menu("User #" + currentUser.getID() + "'s Library");
         menuBar.getMenus().add(libraryMenu);
     }
 
@@ -76,23 +101,5 @@ public class DatabaseGUI extends BorderPane {
         if(getCenter() != null) {
             setCenter(null);
         }
-    }
-
-    private TableView<Song> buildSongTable(ArrayList<Song> songs) {
-        ObservableList<Song> songList = FXCollections.observableArrayList(songs);
-        TableView<Song> songTable = new TableView<>(songList);
-
-        // Creating our columns and setting their values.
-        TableColumn<Song, Integer> songIdCol = new TableColumn<>("Song ID");
-        TableColumn<Song, String> songTitleCol = new TableColumn<>("Title");
-        TableColumn<Song, Integer> songLengthCol = new TableColumn<>("Length");
-        TableColumn<Song, Integer> songPlayCountCol = new TableColumn<>("Play Count");
-        songIdCol.setCellValueFactory(new PropertyValueFactory<>("song_id"));
-        songTitleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
-        songLengthCol.setCellValueFactory(new PropertyValueFactory<>("length"));
-        songPlayCountCol.setCellValueFactory(new PropertyValueFactory<>("play_count"));
-
-        songTable.getColumns().setAll(songIdCol, songTitleCol, songLengthCol, songPlayCountCol);
-        return songTable;
     }
 }
