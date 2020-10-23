@@ -51,6 +51,7 @@ public class Database {
             Song song = new Song(set);
             getSongGenres(song);
             getSongArtists(song);
+            getTotalPlayCount(song);
             songs.add(song);
         }
         stmt.close();
@@ -119,14 +120,27 @@ public class Database {
         String values = String.format("(%d, %d, %d);", user.getID(), song.getID(), 0);
         Statement stmt = connection.createStatement();
         stmt.executeUpdate("insert into owns_song (user_id, song_id, play_count) values " + values);
-        user.getSongLibrary().add(song);
+        song.setPlay_count(0);
+        user.addSong(song);
         stmt.close();
     }
 
     // TODO
-    public void addAlbumToUserLibrary(User user, Album album) {
-        int user_id = user.getID();
-        int album_id = album.getID();
+    public void addAlbumToUserLibrary(User user, Album album) throws SQLException {
+        if(user.getAlbumLibrary().contains(album)) {
+            throw new SQLException("Album already in user library!");
+        }
+        String values = String.format("(%d, %d);", user.getID(), album.getID());
+        Statement stmt = connection.createStatement();
+        stmt.executeUpdate("insert into owns_album (user_id, album_id) values " + values);
+        user.addAlbum(album);
+        // Add songs in an album to the user library.
+        for(Song s : album.getSongs()) {
+            try {
+                addSongToUserLibrary(user, s);
+            } catch (SQLException ignored) {}
+        }
+        stmt.close();
     }
 
     /**
@@ -141,8 +155,8 @@ public class Database {
         }
         Timestamp now = new Timestamp(System.currentTimeMillis());
         song.playSong(now);
-        String update = String.format("play_count=%d, time_stamp=%s", song.getPlay_count(), song.getTime_stamp());
-        String condition = String.format("song_id=%d, user_id=%d", song.getID(), user.getID());
+        String update = String.format("play_count=play_count + 1, time_stamp='%s'", song.getTime_stamp());
+        String condition = String.format("song_id=%d and user_id=%d", song.getID(), user.getID());
         Statement stmt = connection.createStatement();
         stmt.executeUpdate("update owns_song set " + update + " where " + condition);
         stmt.close();
@@ -164,7 +178,7 @@ public class Database {
             getSongGenres(song);
             getSongArtists(song);
             getTotalPlayCount(song);
-            album.getSongs().add(song);
+            album.addSong(song);
         }
         set.close();
         stmt.close();
@@ -249,7 +263,7 @@ public class Database {
             getSongGenres(song);
             song.setTime_stamp(set.getTimestamp("time_stamp"));
             song.setPlay_count(set.getInt("play_count"));
-            user.getSongLibrary().add(song);
+            user.addSong(song);
         }
         stmt.close();
         set.close();
@@ -269,7 +283,7 @@ public class Database {
             Album album = new Album(set);
             getAlbumGenres(album);
             getSongsInAlbum(album);
-            user.getAlbumLibrary().add(album);
+            user.addAlbum(album);
         }
         stmt.close();
         set.close();

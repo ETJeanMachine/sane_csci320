@@ -9,6 +9,7 @@ import model.*;
 
 import java.sql.Date;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 
 public class TableBuilder<S extends DataType> {
@@ -58,19 +59,21 @@ public class TableBuilder<S extends DataType> {
         genreCol.setCellValueFactory(new PropertyValueFactory<>("genres"));
         playCol.setCellValueFactory(new PropertyValueFactory<>("play_count"));
 
-        table.getColumns().addAll(titleCol, lengthCol, artistCol, genreCol);
+        table.getColumns().addAll(titleCol, lengthCol, artistCol, genreCol, playCol);
     }
 
     private void buildAlbumTable() {
         TableColumn<S, String> nameCol = new TableColumn<>("Album Name");
+        TableColumn<S, String> artistCol = new TableColumn<>("Artists");
         TableColumn<S, Date> releaseDateCol = new TableColumn<>("Release Date");
         TableColumn<S, String> genreCol = new TableColumn<>("Genres");
 
         nameCol.setCellValueFactory(new PropertyValueFactory<>("album_name"));
+        artistCol.setCellValueFactory(new PropertyValueFactory<>("artists"));
         releaseDateCol.setCellValueFactory(new PropertyValueFactory<>("release_date"));
         genreCol.setCellValueFactory(new PropertyValueFactory<>("genres"));
 
-        table.getColumns().addAll(nameCol, releaseDateCol, genreCol);
+        table.getColumns().addAll(nameCol, artistCol, releaseDateCol, genreCol);
     }
 
     private void buildArtistTable() {

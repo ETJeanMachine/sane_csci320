@@ -14,9 +14,9 @@ public class Song extends DataType {
     private final ArrayList<String> genres = new ArrayList<>();
     private final ArrayList<Artist> artists = new ArrayList<>();
 
-    private int track_number;
+    private int track_number = 0;
     private int play_count = 0;
-    private Timestamp time_stamp;
+    private Timestamp time_stamp = null;
 
     /**
      * Builds a song object using a set containing all the database items for a song.

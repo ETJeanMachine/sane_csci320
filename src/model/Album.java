@@ -11,6 +11,7 @@ public class Album extends DataType {
     private final Date release_date;
     private final String album_name;
     private final ArrayList<Song> songs = new ArrayList<>();
+    private final ArrayList<Artist> artists = new ArrayList<>();
     private final ArrayList<String> genres = new ArrayList<>();
 
     public Album(ResultSet set) throws SQLException {
@@ -31,8 +32,29 @@ public class Album extends DataType {
         genres.add(genre);
     }
 
+    public void addSong(Song song) {
+        songs.add(song);
+        for(Artist a : song.getArtistList()) {
+            if(!artists.contains(a)) {
+                artists.add(a);
+            }
+        }
+    }
+
     public ArrayList<Song> getSongs() {
         return this.songs;
+    }
+
+    public ArrayList<Artist> getArtistList() {
+        return artists;
+    }
+
+    public String getArtists() {
+        ArrayList<String> artistNames = new ArrayList<>();
+        for(Artist a : artists) {
+            artistNames.add(a.getArtist_name());
+        }
+        return Arrays.toString(artistNames.toArray()).replaceAll("[\\[\\]]", "");
     }
 
     public String getGenres() {
