@@ -1,7 +1,6 @@
 package ui;
 
 import javafx.geometry.Insets;
-import javafx.geometry.Side;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
@@ -46,9 +45,9 @@ public class DatabaseGUI extends BorderPane {
      */
     private void renderBrowse() {
         Menu browseMenu = new Menu("Browse");
+        // You can only browse songs and albums in our GUI.
         MenuItem browseSongs = new MenuItem("Songs");
         MenuItem browseAlbums = new MenuItem("Albums");
-        MenuItem browseArtists = new MenuItem("Artists");
         // Our internal components that are universal.
         VBox center = new VBox();
         HBox searchQuery = new HBox();
@@ -71,6 +70,27 @@ public class DatabaseGUI extends BorderPane {
                         center.getChildren().add(1, MainGUI.error("No songs found from search!"));
                     } else {
                         TableBuilder<Song> builder = new TableBuilder<>(songs);
+                        builder.getTable().setRowFactory(tableView -> {
+                            TableRow<Song> row = new TableRow<>();
+                            ContextMenu menu = new ContextMenu();
+                            MenuItem add = new MenuItem("Add song to library");
+                            row.setOnMouseClicked(mouseEvent -> {
+                                Song s = row.getItem();
+                                if(s != null) {
+                                    try {
+                                        db.addSongToUserLibrary(currentUser, s);
+                                    } catch (SQLException e) {
+                                        setBottom(MainGUI.error(e.getMessage()));
+                                    }
+                                    menu.hide();
+                                    menu.show(row, mouseEvent.getScreenX(), mouseEvent.getScreenY());
+                                }
+                            });
+                            if(currentUser != null) {
+                                menu.getItems().add(add);
+                            }
+                            return row;
+                        });
                         center.getChildren().add(1, builder.getTable());
                     }
                 } catch (SQLException e) {
@@ -93,34 +113,37 @@ public class DatabaseGUI extends BorderPane {
                         // Setting our context menus for our table.
                         builder.getTable().setRowFactory(tableView -> {
                             TableRow<Album> row = new TableRow<>();
+                            ContextMenu menu = new ContextMenu();
+                            MenuItem songs = new MenuItem("See songs in album");
+                            MenuItem add = new MenuItem("Add album to library");
                             row.setOnMouseClicked(mouseEvent -> {
                                 Album a = row.getItem();
                                 if(a != null) {
-                                    ContextMenu menu = new ContextMenu();
-                                    MenuItem songs = new MenuItem("See songs in album.");
                                     songs.setOnAction(event -> {
-                                        try {
-                                            ArrayList<Song> s = db.getSongsInAlbum(a);
-                                            if(s.size() != 0) {
-                                                TableBuilder<Song> songTableBuilder = new TableBuilder<>(db.getSongsInAlbum(a));
-                                                // Adding our track number
-                                                TableColumn<Song, Integer> trackNumCol = new TableColumn<>("Track Number");
-                                                trackNumCol.setCellValueFactory(new PropertyValueFactory<>("track_number"));
-                                                TableView<Song> table = songTableBuilder.getTable();
-                                                table.getColumns().add(trackNumCol);
-                                                center.getChildren().add(2, table);
-                                            } else {
-                                                center.getChildren().add(2, MainGUI.error("No songs in album!"));
-                                            }
-                                            if(center.getChildren().size() == 4) {
-                                                center.getChildren().remove(3);
-                                            }
-                                        } catch (SQLException ignored) {}
+                                        ArrayList<Song> s = a.getSongs();
+                                        if(s.size() != 0) {
+                                            TableBuilder<Song> songTableBuilder = new TableBuilder<>(s);
+                                            // Adding our track number
+                                            TableColumn<Song, Integer> trackNumCol = new TableColumn<>("Track Number");
+                                            trackNumCol.setCellValueFactory(new PropertyValueFactory<>("track_number"));
+                                            TableView<Song> table = songTableBuilder.getTable();
+                                            table.getColumns().add(trackNumCol);
+                                            setBottom(table);
+                                        } else {
+                                            setBottom(MainGUI.error("No songs in album!"));
+                                        }
                                     });
-                                    menu.getItems().add(songs);
-                                    menu.show(row, Side.LEFT, 0, 0);
+                                    add.setOnAction(event -> {
+
+                                    });
+                                    menu.hide();
+                                    menu.show(row, mouseEvent.getScreenX(), mouseEvent.getScreenY());
                                 }
                             });
+                            if(currentUser != null) {
+                                menu.getItems().add(add);
+                            }
+                            menu.getItems().add(songs);
                             return row;
                         });
                         center.getChildren().add(1, builder.getTable());
@@ -131,25 +154,7 @@ public class DatabaseGUI extends BorderPane {
             });
             setCenter(center);
         });
-        browseArtists.setOnAction(actionEvent -> {
-            refreshScreen();
-            search.setOnAction(searchAction -> {
-                refreshCenter(center);
-                try {
-                    ArrayList<Artist> artists = db.searchForArtist(search.getText());
-                    if(artists.size() == 0) {
-                        center.getChildren().add(1, MainGUI.error("No artists found from search!"));
-                    } else {
-                        TableBuilder<Artist> builder = new TableBuilder<>(artists);
-                        center.getChildren().add(1, builder.getTable());
-                    }
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            });
-            setCenter(center);
-        });
-        browseMenu.getItems().addAll(browseSongs, browseAlbums, browseArtists);
+        browseMenu.getItems().addAll(browseSongs, browseAlbums);
         menuBar.getMenus().add(browseMenu);
     }
 
@@ -162,8 +167,27 @@ public class DatabaseGUI extends BorderPane {
         Menu libraryMenu = new Menu("User #" + currentUser.getID() + "'s Library");
         MenuItem librarySongs = new MenuItem("Songs");
         MenuItem libraryAlbums = new MenuItem("Albums");
-        MenuItem libraryArtists = new MenuItem("Artists");
-        libraryMenu.getItems().addAll(librarySongs, libraryAlbums, libraryArtists);
+        librarySongs.setOnAction(actionEvent -> {
+            refreshScreen();
+            ArrayList<Song> songLibrary = currentUser.getSongLibrary();
+            if(songLibrary.size() == 0) {
+                setCenter(MainGUI.error("User #" + currentUser.getID() + "'s song library is empty!"));
+            } else {
+                TableBuilder<Song> songs = new TableBuilder<>(currentUser.getSongLibrary());
+                setCenter(songs.getTable());
+            }
+        });
+        libraryAlbums.setOnAction(actionEvent -> {
+            refreshScreen();
+            ArrayList<Album> albumLibrary = currentUser.getAlbumLibrary();
+            if(albumLibrary.size() == 0) {
+                setCenter(MainGUI.error("User #" + currentUser.getID() + "'s album library is empty!"));
+            } else {
+                TableBuilder<Album> albums = new TableBuilder<>(currentUser.getAlbumLibrary());
+                setCenter(albums.getTable());
+            }
+        });
+        libraryMenu.getItems().addAll(librarySongs, libraryAlbums);
         menuBar.getMenus().add(libraryMenu);
     }
 
@@ -173,6 +197,9 @@ public class DatabaseGUI extends BorderPane {
     private void refreshScreen() {
         if (getCenter() != null) {
             setCenter(null);
+        }
+        if(getBottom() != null) {
+            setBottom(null);
         }
     }
 
@@ -196,16 +223,23 @@ public class DatabaseGUI extends BorderPane {
         HBox.setMargin(t, new Insets(5));
 
         field.setOnAction(actionEvent -> {
-            Text error = new Text();
             try {
                 int id = Integer.parseInt(field.getText());
                 currentUser = db.fetchUser(id);
+                popup.hide();
                 renderLibrary();
-            } catch (SQLException throwables) {
-                throwables.printStackTrace();
+            } catch (SQLException e) {
+                content.getChildren().add(1, MainGUI.error("Internal database error!"));
+                e.printStackTrace();
+                if(content.getChildren().size() == 3) {
+                    content.getChildren().remove(2);
+                }
+            } catch (NumberFormatException e) {
+                content.getChildren().add(1, MainGUI.error("Please enter an integer."));
+                if(content.getChildren().size() == 3) {
+                    content.getChildren().remove(2);
+                }
             }
-
-            popup.hide();
         });
 
         query.getChildren().addAll(t, field);

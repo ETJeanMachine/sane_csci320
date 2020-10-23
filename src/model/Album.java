@@ -3,11 +3,15 @@ package model;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Album extends DataType {
 
     private final Date release_date;
     private final String album_name;
+    private final ArrayList<Song> songs = new ArrayList<>();
+    private final ArrayList<String> genres = new ArrayList<>();
 
     public Album(ResultSet set) throws SQLException {
         super(set);
@@ -21,5 +25,17 @@ public class Album extends DataType {
 
     public String getAlbum_name() {
         return album_name;
+    }
+
+    public void addGenre(String genre) {
+        genres.add(genre);
+    }
+
+    public ArrayList<Song> getSongs() {
+        return this.songs;
+    }
+
+    public String getGenres() {
+        return Arrays.toString(genres.toArray()).replaceAll("[\\[\\]]", "");
     }
 }

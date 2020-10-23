@@ -24,7 +24,8 @@ public class Database {
      */
     public Database(String password) throws Exception {
         Class.forName("org.postgresql.Driver");
-        // These constants are used to parse a properties file that is securely stored on our computer, as to not disturb unwanted access to the database.
+        // These constants are used to parse a properties file that is securely stored on our computer, as to not
+        // disturb unwanted access to the database.
         String username = "p320_14";
         String url = "jdbc:postgresql://reddwarf.cs.rit.edu:5432/" + username;
         this.connection = DriverManager.getConnection(url, username, password);
@@ -35,16 +36,21 @@ public class Database {
         connection.close();
     }
 
+    /**
+     *
+     * @param search
+     * @return
+     * @throws SQLException
+     */
     public ArrayList<Song> searchForSongs(String search) throws SQLException {
         search = search.toLowerCase();
         ArrayList<Song> songs = new ArrayList<>();
         Statement stmt = connection.createStatement();
-        ResultSet set = stmt.executeQuery("select song.*, has_genre_song.genre_type from song, has_genre_song where " +
-                "lower(song.title) like '%" + search + "%' and has_genre_song.song_id=song.song_id;");
+        ResultSet set = stmt.executeQuery("select song.* from song where lower(song.title) like '%" + search + "%';");
         while (set.next()) {
             Song song = new Song(set);
-            song.addGenre(set.getString("genre_type"));
-            setSongArtists(song);
+            getSongGenres(song);
+            getSongArtists(song);
             songs.add(song);
         }
         stmt.close();
@@ -63,44 +69,16 @@ public class Database {
         search = search.toLowerCase();
         ArrayList<Album> albums = new ArrayList<>();
         Statement stmt = connection.createStatement();
-        ResultSet set = stmt.executeQuery("select album.*, has_genre_album.genre_type from album, has_genre_album " +
-                "where lower(album_name) like '%" + search + "%' and album.album_id=has_genre_album.album_id;");
+        ResultSet set = stmt.executeQuery("select album.* from album where lower(album_name) like '%" + search + "%';");
         while (set.next()) {
-            albums.add(new Album(set));
+            Album album = new Album(set);
+            getSongsInAlbum(album);
+            getAlbumGenres(album);
+            albums.add(album);
         }
         set.close();
         stmt.close();
         return albums;
-    }
-
-    public ArrayList<Artist> searchForArtist(String search) throws SQLException {
-        search = search.toLowerCase();
-        ArrayList<Artist> artists = new ArrayList<>();
-        Statement stmt = connection.createStatement();
-        ResultSet set = stmt.executeQuery("select * from artist where lower(artist_name) like '%" + search + "%';");
-        while (set.next()) {
-            artists.add(new Artist(set));
-        }
-        set.close();
-        stmt.close();
-        return artists;
-    }
-
-    public ArrayList<Song> getSongsInAlbum(Album album) throws SQLException {
-        int id = album.getID();
-        ArrayList<Song> songs = new ArrayList<>();
-        Statement stmt = connection.createStatement();
-        ResultSet set = stmt.executeQuery("select song.*, has.track_number from song, has where has.album_id=" + id +
-                " and has.song_id=song.song_id order by track_number");
-        while (set.next()) {
-            Song song = new Song(set);
-            song.setTrack_number(set.getInt("track_number"));
-            setSongArtists(song);
-            songs.add(song);
-        }
-        set.close();
-        stmt.close();
-        return songs;
     }
 
     /**
@@ -121,22 +99,177 @@ public class Database {
             set.next();
             user = new User(set);
         }
+        getUserSongs(user);
+        getUserAlbums(user);
         set.close();
         stmt.close();
         return user;
     }
 
-    private void setTotalPlayCount(Song song) {
-        int id = song.getID();
+    /**
+     *
+     * @param user
+     * @param song
+     * @throws SQLException
+     */
+    public void addSongToUserLibrary(User user, Song song) throws SQLException {
+        if(user.getSongLibrary().contains(song)) {
+            throw new SQLException("Song already in user library!");
+        }
+        String values = String.format("(%d, %d, %d);", user.getID(), song.getID(), 0);
+        Statement stmt = connection.createStatement();
+        stmt.executeUpdate("insert into owns_song (user_id, song_id, play_count) values " + values);
+        user.getSongLibrary().add(song);
+        stmt.close();
     }
 
-    private void setSongArtists(Song song) throws SQLException {
+    // TODO
+    public void addAlbumToUserLibrary(User user, Album album) {
+        int user_id = user.getID();
+        int album_id = album.getID();
+    }
+
+    /**
+     *
+     * @param user
+     * @param song
+     * @throws SQLException
+     */
+    public void playSong(User user, Song song) throws SQLException {
+        if(!user.getSongLibrary().contains(song)) {
+            throw new SQLException("Song not in user library!");
+        }
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        song.playSong(now);
+        String update = String.format("play_count=%d, time_stamp=%s", song.getPlay_count(), song.getTime_stamp());
+        String condition = String.format("song_id=%d, user_id=%d", song.getID(), user.getID());
+        Statement stmt = connection.createStatement();
+        stmt.executeUpdate("update owns_song set " + update + " where " + condition);
+        stmt.close();
+    }
+
+    /**
+     *
+     * @param album
+     * @throws SQLException
+     */
+    private void getSongsInAlbum(Album album) throws SQLException {
+        int id = album.getID();
+        Statement stmt = connection.createStatement();
+        ResultSet set = stmt.executeQuery("select song.*, has.track_number from song, has where has.album_id=" + id +
+                " and has.song_id=song.song_id order by track_number");
+        while (set.next()) {
+            Song song = new Song(set);
+            song.setTrack_number(set.getInt("track_number"));
+            getSongGenres(song);
+            getSongArtists(song);
+            getTotalPlayCount(song);
+            album.getSongs().add(song);
+        }
+        set.close();
+        stmt.close();
+    }
+
+    /**
+     *
+     * @param song
+     * @throws SQLException
+     */
+    private void getTotalPlayCount(Song song) throws SQLException {
+        int id = song.getID();
+        Statement stmt = connection.createStatement();
+        ResultSet set = stmt.executeQuery("select play_count from owns_song where song_id=" + id);
+        int total_count = 0;
+        while (set.next()) {
+            total_count += set.getInt("play_count");
+        }
+        song.setPlay_count(total_count);
+        stmt.close();
+        set.close();
+    }
+
+    /**
+     *
+     * @param song
+     * @throws SQLException
+     */
+    private void getSongArtists(Song song) throws SQLException {
         int id = song.getID();
         Statement stmt = connection.createStatement();
         ResultSet set = stmt.executeQuery("select artist.* from artist, created_by where created_by.artist_id=artist.artist_id " +
                 "and created_by.song_id=" + id);
         while (set.next()) {
             song.addArtist(new Artist(set));
+        }
+        stmt.close();
+        set.close();
+    }
+
+    /**
+     *
+     * @param song
+     * @throws SQLException
+     */
+    private void getSongGenres(Song song) throws SQLException {
+        int song_id = song.getID();
+        Statement stmt = connection.createStatement();
+        ResultSet set = stmt.executeQuery("select genre_type from has_genre_song where song_id=" + song_id);
+        while(set.next()) {
+            song.addGenre(set.getString("genre_type"));
+        }
+        stmt.close();
+        set.close();
+    }
+
+    // TODO
+    private void getAlbumGenres(Album album) throws SQLException {
+        int album_id = album.getID();
+        Statement stmt = connection.createStatement();
+        ResultSet set = stmt.executeQuery("select genre_type from has_genre_album where album_id=" + album_id);
+        while(set.next()) {
+            album.addGenre(set.getString("genre_type"));
+        }
+        stmt.close();
+        set.close();
+    }
+
+    /**
+     *
+     * @param user
+     * @throws SQLException
+     */
+    private void getUserSongs(User user) throws SQLException {
+        int user_id = user.getID();
+        Statement stmt = connection.createStatement();
+        ResultSet set = stmt.executeQuery("select song.*, owns_song.play_count, owns_song.time_stamp from song inner join " +
+                "owns_song on song.song_id=owns_song.song_id and owns_song.user_id=" + user_id + ";");
+        while(set.next()) {
+            Song song = new Song(set);
+            getSongArtists(song);
+            getSongGenres(song);
+            song.setTime_stamp(set.getTimestamp("time_stamp"));
+            song.setPlay_count(set.getInt("play_count"));
+            user.getSongLibrary().add(song);
+        }
+        stmt.close();
+        set.close();
+    }
+
+    /**
+     *
+     * @param user
+     * @throws SQLException
+     */
+    private void getUserAlbums(User user) throws SQLException {
+        int user_id = user.getID();
+        Statement stmt = connection.createStatement();
+        ResultSet set = stmt.executeQuery("select album.* from album inner join owns_album on " +
+                "album.album_id=owns_album.album_id and owns_album.user_id=" + user_id + ";");
+        while(set.next()) {
+            Album album = new Album(set);
+            getAlbumGenres(album);
+            getSongsInAlbum(album);
+            user.getAlbumLibrary().add(album);
         }
         stmt.close();
         set.close();

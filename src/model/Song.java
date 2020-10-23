@@ -2,6 +2,8 @@ package model;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -14,6 +16,7 @@ public class Song extends DataType {
 
     private int track_number;
     private int play_count = 0;
+    private Timestamp time_stamp;
 
     /**
      * Builds a song object using a set containing all the database items for a song.
@@ -38,6 +41,19 @@ public class Song extends DataType {
         this.artists.add(artist);
     }
 
+    public void playSong(Timestamp time) {
+        play_count++;
+        this.time_stamp = time;
+    }
+
+    public void setPlay_count(int play_count) {
+        this.play_count = play_count;
+    }
+
+    public void setTime_stamp(Timestamp time) {
+        this.time_stamp = time;
+    }
+
     public String getLength() {
         int min = length / 60;
         int sec = length % 60;
@@ -60,8 +76,24 @@ public class Song extends DataType {
         return Arrays.toString(artistNames.toArray()).replaceAll("[\\[\\]]", "");
     }
 
+    public ArrayList<Artist> getArtistList() {
+        return this.artists;
+    }
+
+    public ArrayList<String> getGenreList() {
+        return this.genres;
+    }
+
     public int getTrack_number() {
         return this.track_number;
+    }
+
+    public int getPlay_count() {
+        return play_count;
+    }
+
+    public Timestamp getTime_stamp() {
+        return this.time_stamp;
     }
 
     @Override

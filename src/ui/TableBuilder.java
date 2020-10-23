@@ -13,7 +13,7 @@ import java.util.ArrayList;
 
 public class TableBuilder<S extends DataType> {
 
-    private TableView<S> table;
+    private final TableView<S> table;
 
     /**
      * A class that allows us to build tables from our data types.
@@ -49,22 +49,28 @@ public class TableBuilder<S extends DataType> {
         TableColumn<S, String> titleCol = new TableColumn<>("Title");
         TableColumn<S, Integer> lengthCol = new TableColumn<>("Length");
         TableColumn<S, String> artistCol = new TableColumn<>("Artists");
+        TableColumn<S, String> genreCol = new TableColumn<>("Genres");
+        TableColumn<S, Integer> playCol = new TableColumn<>("Play Count");
 
         titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
         lengthCol.setCellValueFactory(new PropertyValueFactory<>("length"));
         artistCol.setCellValueFactory(new PropertyValueFactory<>("artists"));
+        genreCol.setCellValueFactory(new PropertyValueFactory<>("genres"));
+        playCol.setCellValueFactory(new PropertyValueFactory<>("play_count"));
 
-        table.getColumns().addAll(titleCol, lengthCol, artistCol);
+        table.getColumns().addAll(titleCol, lengthCol, artistCol, genreCol);
     }
 
     private void buildAlbumTable() {
         TableColumn<S, String> nameCol = new TableColumn<>("Album Name");
         TableColumn<S, Date> releaseDateCol = new TableColumn<>("Release Date");
+        TableColumn<S, String> genreCol = new TableColumn<>("Genres");
 
         nameCol.setCellValueFactory(new PropertyValueFactory<>("album_name"));
         releaseDateCol.setCellValueFactory(new PropertyValueFactory<>("release_date"));
+        genreCol.setCellValueFactory(new PropertyValueFactory<>("genres"));
 
-        table.getColumns().addAll(nameCol, releaseDateCol);
+        table.getColumns().addAll(nameCol, releaseDateCol, genreCol);
     }
 
     private void buildArtistTable() {
@@ -75,7 +81,5 @@ public class TableBuilder<S extends DataType> {
         birthCol.setCellValueFactory(new PropertyValueFactory<>("dob"));
 
         table.getColumns().addAll(nameCol, birthCol);
-
-
     }
 }
