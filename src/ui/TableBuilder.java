@@ -2,20 +2,18 @@ package ui;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.geometry.Side;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import model.Album;
-import model.Artist;
-import model.DataType;
-import model.Song;
+import model.*;
 
 import java.sql.Date;
+import java.sql.SQLException;
 import java.util.ArrayList;
 
 public class TableBuilder<S extends DataType> {
 
-    private final TableView<S> table;
+    private TableView<S> table;
 
     /**
      * A class that allows us to build tables from our data types.
@@ -40,7 +38,7 @@ public class TableBuilder<S extends DataType> {
         }
     }
 
-    public TableView<?> getTable() {
+    public TableView<S> getTable() {
         return this.table;
     }
 
@@ -50,13 +48,13 @@ public class TableBuilder<S extends DataType> {
     private void buildSongTable() {
         TableColumn<S, String> titleCol = new TableColumn<>("Title");
         TableColumn<S, Integer> lengthCol = new TableColumn<>("Length");
-        TableColumn<S, Integer> playCountCol = new TableColumn<>("Play Count");
+        TableColumn<S, String> artistCol = new TableColumn<>("Artists");
 
         titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
         lengthCol.setCellValueFactory(new PropertyValueFactory<>("length"));
-        playCountCol.setCellValueFactory(new PropertyValueFactory<>("play_count"));
+        artistCol.setCellValueFactory(new PropertyValueFactory<>("artists"));
 
-        table.getColumns().addAll(titleCol, lengthCol, playCountCol);
+        table.getColumns().addAll(titleCol, lengthCol, artistCol);
     }
 
     private void buildAlbumTable() {
@@ -77,5 +75,7 @@ public class TableBuilder<S extends DataType> {
         birthCol.setCellValueFactory(new PropertyValueFactory<>("dob"));
 
         table.getColumns().addAll(nameCol, birthCol);
+
+
     }
 }
