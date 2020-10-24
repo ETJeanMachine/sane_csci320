@@ -20,7 +20,10 @@ public class Database {
     private final Connection connection;
 
     /**
-     * This constructor establishes a connection with our primary database.
+     * This class connects a client to the database.
+     *
+     * @param password the password of the database.
+     * @throws Exception if there is an error in connection.
      */
     public Database(String password) throws Exception {
         Class.forName("org.postgresql.Driver");
@@ -32,15 +35,21 @@ public class Database {
         connection.setAutoCommit(true);
     }
 
+    /**
+     * CLoses the database connection.
+     *
+     * @throws SQLException if there is an error in closure.
+     */
     public void closeConnection() throws SQLException {
         connection.close();
     }
 
     /**
+     * Searches for songs within in a database.
      *
-     * @param search
-     * @return
-     * @throws SQLException
+     * @param search the search term we are looking for.
+     * @return an arraylist of songs that match our term.
+     * @throws SQLException if there is an error in parsing data.
      */
     public ArrayList<Song> searchForSongs(String search) throws SQLException {
         search = search.toLowerCase();
@@ -83,9 +92,11 @@ public class Database {
     }
 
     /**
-     * @param id
-     * @return
-     * @throws SQLException
+     * Fetches a user with a given ID.
+     *
+     * @param id the id we are looking for.
+     * @return the user with said ID.
+     * @throws SQLException if there is an error in parsing data.
      */
     public User fetchUser(int id) throws SQLException {
         Statement stmt = connection.createStatement();
@@ -108,26 +119,52 @@ public class Database {
     }
 
     /**
+     * Gets the times that a given user has played a song.
      *
-     * @param user
-     * @param song
-     * @throws SQLException
+     * @param user the user we are looking at.
+     * @param song the song we are looking at.
+     * @return an arraylist of times a user has played a given song.
+     * @throws SQLException if there is an error in parsing data.
+     */
+    public ArrayList<Timestamp> getTimeStamps(User user, Song song) throws SQLException {
+        ArrayList<Timestamp> timestamps = new ArrayList<>();
+        Statement stmt = connection.createStatement();
+        String condition = String.format("user_id=%d and song_id=%d", user.getID(), song.getID());
+        ResultSet set = stmt.executeQuery("select time_stamp from time_records where " + condition);
+        while (set.next()) {
+            timestamps.add(set.getTimestamp(1));
+        }
+        return timestamps;
+    }
+
+    /**
+     * Adds a song to the users library.
+     *
+     * @param user the user we are updating the library of.
+     * @param song the song we are adding.
+     * @throws SQLException if there is an error in parsing data.
      */
     public void addSongToUserLibrary(User user, Song song) throws SQLException {
-        if(user.getSongLibrary().contains(song)) {
+        if (user.getSongLibrary().contains(song)) {
             throw new SQLException("Song already in user library!");
         }
-        String values = String.format("(%d, %d, %d);", user.getID(), song.getID(), 0);
+        String values = String.format("(%d, %d);", user.getID(), song.getID());
         Statement stmt = connection.createStatement();
-        stmt.executeUpdate("insert into owns_song (user_id, song_id, play_count) values " + values);
+        stmt.executeUpdate("insert into owns_song (user_id, song_id) values " + values);
         song.setPlay_count(0);
         user.addSong(song);
         stmt.close();
     }
 
-    // TODO
+    /**
+     * Adds an album to the users library.
+     *
+     * @param user  the user we are updating the library of.
+     * @param album the album we are adding.
+     * @throws SQLException if there is an error in parsing data.
+     */
     public void addAlbumToUserLibrary(User user, Album album) throws SQLException {
-        if(user.getAlbumLibrary().contains(album)) {
+        if (user.getAlbumLibrary().contains(album)) {
             throw new SQLException("Album already in user library!");
         }
         String values = String.format("(%d, %d);", user.getID(), album.getID());
@@ -135,37 +172,40 @@ public class Database {
         stmt.executeUpdate("insert into owns_album (user_id, album_id) values " + values);
         user.addAlbum(album);
         // Add songs in an album to the user library.
-        for(Song s : album.getSongs()) {
+        for (Song s : album.getSongs()) {
             try {
                 addSongToUserLibrary(user, s);
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
         }
         stmt.close();
     }
 
     /**
+     * "Plays" a song, or increments it's play_count and inserts into time_records the time it was "played" at.
      *
-     * @param user
-     * @param song
-     * @throws SQLException
+     * @param user The user playing the song
+     * @param song The song being played
+     * @throws SQLException if there is an error in parsing data.
      */
     public void playSong(User user, Song song) throws SQLException {
-        if(!user.getSongLibrary().contains(song)) {
+        if (!user.getSongLibrary().contains(song)) {
             throw new SQLException("Song not in user library!");
         }
-        Timestamp now = new Timestamp(System.currentTimeMillis());
-        song.playSong(now);
-        String update = String.format("play_count=play_count + 1, time_stamp='%s'", song.getTime_stamp());
-        String condition = String.format("song_id=%d and user_id=%d", song.getID(), user.getID());
+        // String condition = String.format("play_count=play_count + 1 where song_id=%d and user_id=%d;", song.getID(), user.getID());
         Statement stmt = connection.createStatement();
-        stmt.executeUpdate("update owns_song set " + update + " where " + condition);
+        String values = String.format("(localtimestamp, %d, %d);", song.getID(), user.getID());
+        stmt.executeUpdate("update owns_song set play_count=play_count+1 where user_id=" + user.getID() + " and song_id=" + song.getID());
+        stmt.executeUpdate("insert into time_records (time_stamp, song_id, user_id) values " + values);
         stmt.close();
+        song.playSong();
     }
 
     /**
+     * Sets an album DataType to have it's songs stored within.
      *
-     * @param album
-     * @throws SQLException
+     * @param album the album we are setting up.
+     * @throws SQLException if there is an error in getting the songs for an album.
      */
     private void getSongsInAlbum(Album album) throws SQLException {
         int id = album.getID();
@@ -185,9 +225,10 @@ public class Database {
     }
 
     /**
+     * Gets the total amount of times a song has been played.
      *
-     * @param song
-     * @throws SQLException
+     * @param song the song we are looking at.
+     * @throws SQLException if there is an error in parsing data.
      */
     private void getTotalPlayCount(Song song) throws SQLException {
         int id = song.getID();
@@ -203,9 +244,10 @@ public class Database {
     }
 
     /**
+     * Adds artists to a given song.
      *
-     * @param song
-     * @throws SQLException
+     * @param song the song we are adding artists to.
+     * @throws SQLException if there is an error in parsing data.
      */
     private void getSongArtists(Song song) throws SQLException {
         int id = song.getID();
@@ -220,27 +262,33 @@ public class Database {
     }
 
     /**
+     * Adds genres to a song data type.
      *
-     * @param song
-     * @throws SQLException
+     * @param song the song we are finding the genres for.
+     * @throws SQLException if there is an error in parsing data.
      */
     private void getSongGenres(Song song) throws SQLException {
         int song_id = song.getID();
         Statement stmt = connection.createStatement();
         ResultSet set = stmt.executeQuery("select genre_type from has_genre_song where song_id=" + song_id);
-        while(set.next()) {
+        while (set.next()) {
             song.addGenre(set.getString("genre_type"));
         }
         stmt.close();
         set.close();
     }
 
-    // TODO
+    /**
+     * Adds genres to an album data type.
+     *
+     * @param album the album we are finding the genres for.
+     * @throws SQLException if there is an error in parsing data.
+     */
     private void getAlbumGenres(Album album) throws SQLException {
         int album_id = album.getID();
         Statement stmt = connection.createStatement();
         ResultSet set = stmt.executeQuery("select genre_type from has_genre_album where album_id=" + album_id);
-        while(set.next()) {
+        while (set.next()) {
             album.addGenre(set.getString("genre_type"));
         }
         stmt.close();
@@ -248,20 +296,20 @@ public class Database {
     }
 
     /**
+     * Sets up the song library for a given user.
      *
-     * @param user
-     * @throws SQLException
+     * @param user the user we are setting up the album library for.
+     * @throws SQLException if there is an error in setting up the library.
      */
     private void getUserSongs(User user) throws SQLException {
         int user_id = user.getID();
         Statement stmt = connection.createStatement();
-        ResultSet set = stmt.executeQuery("select song.*, owns_song.play_count, owns_song.time_stamp from song inner join " +
+        ResultSet set = stmt.executeQuery("select song.*, owns_song.play_count from song inner join " +
                 "owns_song on song.song_id=owns_song.song_id and owns_song.user_id=" + user_id + ";");
-        while(set.next()) {
+        while (set.next()) {
             Song song = new Song(set);
             getSongArtists(song);
             getSongGenres(song);
-            song.setTime_stamp(set.getTimestamp("time_stamp"));
             song.setPlay_count(set.getInt("play_count"));
             user.addSong(song);
         }
@@ -270,16 +318,17 @@ public class Database {
     }
 
     /**
+     * Sets the album library for a given user.
      *
-     * @param user
-     * @throws SQLException
+     * @param user the user we are setting up the album library for.
+     * @throws SQLException if there is an error in setting up the library.
      */
     private void getUserAlbums(User user) throws SQLException {
         int user_id = user.getID();
         Statement stmt = connection.createStatement();
         ResultSet set = stmt.executeQuery("select album.* from album inner join owns_album on " +
                 "album.album_id=owns_album.album_id and owns_album.user_id=" + user_id + ";");
-        while(set.next()) {
+        while (set.next()) {
             Album album = new Album(set);
             getAlbumGenres(album);
             getSongsInAlbum(album);
