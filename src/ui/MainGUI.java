@@ -16,10 +16,19 @@ import java.sql.SQLException;
 
 public class MainGUI extends Application {
 
+    //
+    // Constants
+    //
+
     public static final int GUI_WIDTH = 800;
     public static final int GUI_HEIGHT = 600;
     public static Stage stage;
     public static final Font mainFont = new Font("Arial", 14);
+
+
+    //
+    // Attributes
+    //
 
     private DatabaseGUI dbGUI;
     private final BorderPane mainPane = new BorderPane();
@@ -33,6 +42,11 @@ public class MainGUI extends Application {
         launch();
     }
 
+    /**
+     * This is a helper method to render auto-formatted error text.
+     * @param errorText the string of the error.
+     * @return the text object to display.
+     */
     public static Text error(String errorText) {
         Text error = new Text(errorText);
         error.setFont(mainFont);
@@ -92,7 +106,7 @@ public class MainGUI extends Application {
 
     @Override
     public void start(Stage stage) {
-        this.stage = stage;
+        MainGUI.stage = stage;
         // Setting up our stage components
         stage.setHeight(GUI_HEIGHT);
         stage.setWidth(GUI_WIDTH);

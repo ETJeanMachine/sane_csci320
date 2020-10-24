@@ -6,12 +6,29 @@ import java.util.Objects;
 
 public abstract class DataType {
 
-    private final int id;
-    private final ResultSet set;
+    //
+    // Attributes
+    //
 
+    private final int id;
+
+    /**
+     * This constructs a generic datatype.
+     *
+     * @param set a SQL entry set containing an ID.
+     * @throws SQLException if this entry has no ID inside of it.
+     */
     public DataType(ResultSet set) throws SQLException {
-        this.set = set;
         this.id = set.getInt(1);
+    }
+
+    /**
+     * Returns the ID of the datatype.
+     *
+     * @return the int id of the data.
+     */
+    public int getID() {
+        return this.id;
     }
 
     @Override
@@ -25,14 +42,6 @@ public abstract class DataType {
     @Override
     public int hashCode() {
         return Objects.hash(id);
-    }
-
-    public ResultSet getSet() {
-        return this.set;
-    }
-
-    public int getID() {
-        return this.id;
     }
 
 }

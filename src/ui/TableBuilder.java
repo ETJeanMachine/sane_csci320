@@ -2,22 +2,25 @@ package ui;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.geometry.Side;
-import javafx.scene.control.*;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
-import model.*;
+import model.Album;
+import model.Artist;
+import model.DataType;
+import model.Song;
 
 import java.sql.Date;
-import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 
 public class TableBuilder<S extends DataType> {
 
+    // Our table that we are building.
     private final TableView<S> table;
 
     /**
      * A class that allows us to build tables from our data types.
+     *
      * @param data The data we are constructed the data from.
      */
     public TableBuilder(ArrayList<S> data) {
@@ -30,15 +33,20 @@ public class TableBuilder<S extends DataType> {
 
         // Building the tables based upon the data within them.
         S testData = data.get(0);
-        if(testData instanceof Song) {
+        if (testData instanceof Song) {
             buildSongTable();
-        } else if(testData instanceof Album) {
+        } else if (testData instanceof Album) {
             buildAlbumTable();
-        } else if(testData instanceof Artist) {
+        } else if (testData instanceof Artist) {
             buildArtistTable();
         }
     }
 
+    /**
+     * Returns the table that has been built.
+     *
+     * @return a built table.
+     */
     public TableView<S> getTable() {
         return this.table;
     }
@@ -62,6 +70,9 @@ public class TableBuilder<S extends DataType> {
         table.getColumns().addAll(titleCol, lengthCol, artistCol, genreCol, playCol);
     }
 
+    /**
+     * This builds a table made out of albums.
+     */
     private void buildAlbumTable() {
         TableColumn<S, String> nameCol = new TableColumn<>("Album Name");
         TableColumn<S, String> artistCol = new TableColumn<>("Artists");
@@ -76,6 +87,9 @@ public class TableBuilder<S extends DataType> {
         table.getColumns().addAll(nameCol, artistCol, releaseDateCol, genreCol);
     }
 
+    /**
+     * This builds a table made out of artists.
+     */
     private void buildArtistTable() {
         TableColumn<S, String> nameCol = new TableColumn<>("Artist Name");
         TableColumn<S, Date> birthCol = new TableColumn<>("Date of Birth");
