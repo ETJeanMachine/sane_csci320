@@ -1,5 +1,6 @@
 package ui;
 
+import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -10,25 +11,42 @@ import javafx.stage.Popup;
 import model.*;
 
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DatabaseGUI extends BorderPane {
+
+    //
+    // Attributes
+    //
 
     private final Database db;
     private final MenuBar menuBar = new MenuBar();
     private User currentUser;
 
-    public DatabaseGUI(Database db) throws SQLException {
+    /**
+     * This is the constructor for our Database GUI.
+     *
+     * @param db the database of the GUI.
+     */
+    public DatabaseGUI(Database db) {
         this.db = db;
         renderGUI();
     }
 
+    /**
+     * This closes the database.
+     *
+     * @throws SQLException if there is an error on closure.
+     */
     public void closeDB() throws SQLException {
         db.closeConnection();
     }
 
-    private void renderGUI() throws SQLException {
+    /**
+     * This renders the GUI.
+     */
+    private void renderGUI() {
         Menu userMenu = new Menu("Users");
         MenuItem loginUser = new MenuItem("Login");
         loginUser.setOnAction(actionEvent -> {
@@ -85,7 +103,7 @@ public class DatabaseGUI extends BorderPane {
                                         }
                                     });
                                     menu.hide();
-                                    if(!currentUser.getSongLibrary().contains(s)) {
+                                    if (!currentUser.getSongLibrary().contains(s)) {
                                         menu.show(row, mouseEvent.getScreenX(), mouseEvent.getScreenY());
                                     }
                                 }
@@ -141,7 +159,7 @@ public class DatabaseGUI extends BorderPane {
                                         } catch (Exception ignored) {
                                         }
                                     });
-                                    if(currentUser == null || currentUser.getAlbumLibrary().contains(a)) {
+                                    if (currentUser == null || currentUser.getAlbumLibrary().contains(a)) {
                                         menu.getItems().remove(add);
                                     }
                                     menu.hide();
@@ -164,6 +182,9 @@ public class DatabaseGUI extends BorderPane {
         menuBar.getMenus().add(browseMenu);
     }
 
+    /**
+     * This method renders the user library component of our GUI.
+     */
     private void renderLibrary() {
         refreshScreen();
         // Checking to see if we're swapping users.
@@ -174,6 +195,7 @@ public class DatabaseGUI extends BorderPane {
         MenuItem librarySongs = new MenuItem("Songs");
         MenuItem libraryAlbums = new MenuItem("Albums");
         MenuItem libraryArtists = new MenuItem("Artists");
+        // Setting up our different menu items.
         librarySongs.setOnAction(actionEvent -> {
             refreshScreen();
             ArrayList<Song> songLibrary = currentUser.getSongLibrary();
@@ -186,6 +208,7 @@ public class DatabaseGUI extends BorderPane {
                     TableRow<Song> row = new TableRow<>();
                     ContextMenu menu = new ContextMenu();
                     MenuItem play = new MenuItem("Play song");
+                    MenuItem times = new MenuItem("View times played");
                     row.setOnMouseClicked(mouseEvent -> {
                         Song s = row.getItem();
                         play.setOnAction(event -> {
@@ -195,9 +218,23 @@ public class DatabaseGUI extends BorderPane {
                                 e.printStackTrace();
                             }
                         });
+                        times.setOnAction(event -> {
+                            try {
+                                ArrayList<Timestamp> timestamps = db.getTimeStamps(currentUser, s);
+                                ListView<Timestamp> timeTable = new ListView<>();
+                                timeTable.setItems(FXCollections.observableArrayList(timestamps));
+                                setBottom(timeTable);
+                            } catch (SQLException e) {
+                                e.printStackTrace();
+                            }
+                        });
+                        if (s.getPlay_count() == 0) {
+                            menu.getItems().remove(times);
+                        }
                         menu.hide();
                         menu.show(row, mouseEvent.getScreenX(), mouseEvent.getScreenY());
                     });
+                    menu.getItems().add(times);
                     menu.getItems().add(play);
                     return row;
                 });
@@ -217,7 +254,7 @@ public class DatabaseGUI extends BorderPane {
         libraryArtists.setOnAction(actionEvent -> {
             refreshScreen();
             ArrayList<Artist> artistLibrary = currentUser.getArtistLibrary();
-            if(artistLibrary.size() == 0) {
+            if (artistLibrary.size() == 0) {
                 setCenter(MainGUI.error("User #" + currentUser.getID() + "'s artist library is empty!"));
             } else {
                 TableBuilder<Artist> artists = new TableBuilder<>(artistLibrary);
