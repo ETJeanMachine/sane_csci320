@@ -5,7 +5,9 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.PasswordField;
-import javafx.scene.layout.*;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -36,6 +38,7 @@ public class MainGUI extends Application {
 
     /**
      * Launches the application.
+     *
      * @param args null
      */
     public static void main(String[] args) {
@@ -44,6 +47,7 @@ public class MainGUI extends Application {
 
     /**
      * This is a helper method to render auto-formatted error text.
+     *
      * @param errorText the string of the error.
      * @return the text object to display.
      */
@@ -72,13 +76,13 @@ public class MainGUI extends Application {
             } catch (Exception e) {
                 passField.setText("");
                 String errorText;
-                if(e.getMessage().contains("password")) {
+                if (e.getMessage().contains("password")) {
                     errorText = "Incorrect login, try again.";
                 } else {
                     errorText = "Internal database error, check stack trace.";
                     e.printStackTrace();
                 }
-                if(center.getChildren().size() == 2) {
+                if (center.getChildren().size() == 2) {
                     center.getChildren().remove(1);
                 }
                 center.getChildren().add(1, MainGUI.error(errorText));
@@ -119,7 +123,7 @@ public class MainGUI extends Application {
 
     @Override
     public void stop() {
-        if(dbGUI != null) {
+        if (dbGUI != null) {
             try {
                 dbGUI.closeDB();
             } catch (SQLException thrown) {
