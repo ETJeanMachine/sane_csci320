@@ -61,9 +61,7 @@ public class Song extends DataType {
      * @return a string format of the song's length.
      */
     public String getLength() {
-        int min = length / 60;
-        int sec = length % 60;
-        return String.format("%d:%02d", min, sec);
+        return formatLength(length);
     }
 
     /**

@@ -1,5 +1,6 @@
 package model;
 
+import javafx.util.Pair;
 import org.postgresql.util.PSQLException;
 
 import java.sql.*;
@@ -336,6 +337,138 @@ public class Database {
         }
         stmt.close();
         set.close();
+    }
+
+    //
+    // Analytical Queries
+    //
+
+    /**
+     * Returns the mean album length for a user.
+     *
+     * @param user the user we are looking at.
+     * @return a string of the length of an album.
+     * @throws SQLException if there is an error in parsing data.
+     */
+    public String meanAlbumLength(User user) throws SQLException {
+        Statement stmt = connection.createStatement();
+        ResultSet set = stmt.executeQuery("select avg(sum_len) from (select sum(song.length) as sum_len from " +
+                "song, users, owns_album, has, album where users.user_id = " + user.getID() + " and users.user_id = " +
+                "owns_album.user_id and owns_album.album_id = album.album_id and album.album_id = has.album_id and " +
+                "has.song_id = song.song_id group by album.album_id) as abc");
+        set.next();
+        return DataType.formatLength(set.getInt(1));
+    }
+
+    /**
+     * Finds the mean length of individual songs in a users library.
+     *
+     * @param user the user we are looking at.
+     * @return an string of the length of the song.
+     * @throws SQLException if there is an error in parsing data.
+     */
+    public String meanSongLength(User user) throws SQLException {
+        Statement stmt = connection.createStatement();
+        ResultSet set = stmt.executeQuery("select ceil(avg(song.length)) as avg_len from users, " +
+                "owns_song, song where users.user_id = owns_song.user_id and owns_song.song_id = song.song_id and " +
+                "users.user_id = " + user.getID());
+        set.next();
+        return DataType.formatLength(set.getInt(1));
+    }
+
+    /**
+     * Gets the five most owned genres by a user.
+     *
+     * @param user the user we are looking at.
+     * @return an arraylist of length 5 (or less) of tuples -> containing both the genre and the amount of songs a user
+     * owns in said genre.
+     * @throws SQLException if there is an error in parsing data.
+     */
+    public ArrayList<Pair<String, Integer>> mostOwnedGenres(User user) throws SQLException {
+        Statement stmt = connection.createStatement();
+        ResultSet set = stmt.executeQuery("select has_genre_song.genre_type, count(has_genre_song.genre_type) from " +
+                "users, owns_song, song, has_genre_song where users.user_id = owns_song.user_id and owns_song.song_id = " +
+                "song.song_id and song.song_id = has_genre_song.song_id and users.user_id = " + user.getID() + " group by " +
+                "has_genre_song.genre_type order by count(has_genre_song.genre_type) desc limit 5");
+        ArrayList<Pair<String, Integer>> genres = new ArrayList<>();
+        while (set.next()) {
+            genres.add(new Pair<>(set.getString(1), set.getInt(2)));
+        }
+        return genres;
+    }
+
+    /**
+     * Gets a user's 5 most owned artists.
+     *
+     * @param user the user we are looking at.
+     * @return an arraylist of length 5 or less containing a pair of both the artist's name and the number of owned songs
+     * by an artist.
+     * @throws SQLException if there is an error in parsing data.
+     */
+    public ArrayList<Pair<String, Integer>> mostOwnedArtists(User user) throws SQLException {
+        Statement stmt = connection.createStatement();
+        ResultSet set = stmt.executeQuery("select artist.artist_name, count(artist.artist_id) from users, owns_song," +
+                " song, created_by, artist where users.user_id = owns_song.user_id and owns_song.song_id = song.song_id " +
+                "and song.song_id = created_by.song_id and created_by.artist_id = artist.artist_id and users.user_id = " +
+                user.getID() + " group by artist.artist_name order  by count(artist.artist_id) desc limit 5");
+        ArrayList<Pair<String, Integer>> artists = new ArrayList<>();
+        while (set.next()) {
+            artists.add(new Pair<>(set.getString(1), set.getInt(2)));
+        }
+        return artists;
+    }
+
+    /**
+     * Gets a users top 5 most played songs.
+     *
+     * @param user the user we are looking at.
+     * @return an arraylist of songs and the count of the total song plays by a user.
+     * @throws SQLException if there is an error in parsing the data.
+     */
+    public ArrayList<Pair<String, Integer>> mostPlayedSongs(User user) throws SQLException {
+        Statement stmt = connection.createStatement();
+        ResultSet set = stmt.executeQuery("select song.title, owns_song.play_count from users, owns_song, song where " +
+                "users.user_id = owns_song.user_id and owns_song.song_id = song.song_id and users.user_id = " + user.getID() +
+                " order by owns_song.play_count desc limit 5");
+        ArrayList<Pair<String, Integer>> songs = new ArrayList<>();
+        while (set.next()) {
+            songs.add(new Pair<>(set.getString(1), set.getInt(2)));
+        }
+        return songs;
+    }
+
+    /**
+     * Gets a users top 5 most played genres.
+     *
+     * @param user the user we are looking at.
+     * @return an arraylist of genres and the count of the total plays in said genre by a user.
+     * @throws SQLException if there is an error in parsing data.
+     */
+    public ArrayList<Pair<String, Integer>> mostPlayedGenres(User user) throws SQLException {
+        Statement stmt = connection.createStatement();
+        ResultSet set = stmt.executeQuery("select has_genre_song.genre_type, count(has_genre_song.genre_type) from " +
+                "users, owns_song, song, has_genre_song where users.user_id = owns_song.user_id and owns_song.song_id = " +
+                "song.song_id and song.song_id = has_genre_song.song_id and users.user_id = " + user.getID() + " and " +
+                "owns_song.play_count > 0 group by has_genre_song.genre_type order by count(has_genre_song.genre_type) " +
+                "desc limit 5");
+        ArrayList<Pair<String, Integer>> genres = new ArrayList<>();
+        while (set.next()) {
+            genres.add(new Pair<>(set.getString(1), set.getInt(2)));
+        }
+        return genres;
+    }
+
+    public ArrayList<Pair<String, Integer>> totalGenreOwnership() throws SQLException {
+        Statement stmt = connection.createStatement();
+        ResultSet set = stmt.executeQuery("select has_genre_song.genre_type, count(has_genre_song.genre_type) from " +
+                "users, owns_song, song, has_genre_song where users.user_id = owns_song.user_id and owns_song.song_id " +
+                "= song.song_id and song.song_id = has_genre_song.song_id group by has_genre_song.genre_type order by " +
+                "count(has_genre_song.genre_type) desc");
+        ArrayList<Pair<String, Integer>> genres = new ArrayList<>();
+        while (set.next()) {
+            genres.add(new Pair<>(set.getString(1), set.getInt(2)));
+        }
+        return genres;
     }
 
 }

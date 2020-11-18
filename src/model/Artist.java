@@ -42,5 +42,4 @@ public class Artist extends DataType {
     public Date getDob() {
         return dob;
     }
-
 }

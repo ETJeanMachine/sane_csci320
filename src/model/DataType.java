@@ -22,6 +22,12 @@ public abstract class DataType {
         this.id = set.getInt(1);
     }
 
+    public static String formatLength(int length) {
+        int min = length / 60;
+        int sec = length % 60;
+        return String.format("%d:%02d", min, sec);
+    }
+
     /**
      * Returns the ID of the datatype.
      *
@@ -44,4 +50,8 @@ public abstract class DataType {
         return Objects.hash(id);
     }
 
+    @Override
+    public String toString() {
+        return String.format("{id: %d}", id);
+    }
 }
