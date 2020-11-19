@@ -68,8 +68,8 @@ public class DatabaseGUI extends BorderPane {
         if(currentUser != null) {
             Text lengths = new Text("Mean Lengths: ");
             lengths.setFont(MainGUI.boldFont);
-            Text albumLem = new Text("Mean User Album Length: " + db.meanAlbumLength(currentUser));
-            albumLem.setFont(MainGUI.mainFont);
+            Text albumLen = new Text("Mean User Album Length: " + db.meanAlbumLength(currentUser));
+            albumLen.setFont(MainGUI.mainFont);
             Text songLen = new Text("Mean User Song Length: " + db.meanSongLength(currentUser));
             songLen.setFont(MainGUI.mainFont);
 
@@ -110,7 +110,7 @@ public class DatabaseGUI extends BorderPane {
             ObservableList<String> items = FXCollections.observableArrayList(db.recommendedSongs(currentUser));
             ListView<String> recommendedSongs = new ListView<>(items);
 
-            analyticBox.getChildren().addAll(lengths, albumLem, dataAnalytics, recommendText, recommendedSongs);
+            analyticBox.getChildren().addAll(lengths, albumLen, songLen, dataAnalytics, recommendText, recommendedSongs);
         } else {
             Text totalGenres = new Text("Most Played Genres Globally: ");
             totalGenres.setFont(MainGUI.boldFont);
