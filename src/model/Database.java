@@ -460,6 +460,7 @@ public class Database {
 
     /**
      * Gets the total genre ownership for the entire database.
+     *
      * @return An arraylist of genres and their ownership counts.
      * @throws SQLException if there is an error in parsing the data.
      */
@@ -474,6 +475,29 @@ public class Database {
             genres.add(new Pair<>(set.getString(1), set.getInt(2)));
         }
         return genres;
+    }
+
+    /**
+     * Gets a list of 10 songs recommended to play for a user.
+     *
+     * @param user the user we are recommending songs to.
+     * @return An arraylist of songs from a users most played genre that they do not currently own.
+     * @throws SQLException if there is an error in parsing data.
+     */
+    public ArrayList<String> recommendedSongs(User user) throws SQLException {
+        Statement stmt = connection.createStatement();
+        ResultSet set = stmt.executeQuery("select title from song where song.song_id in (select " +
+                "has_genre_song.song_id from has_genre_song where has_genre_song.genre_type = (select " +
+                "has_genre_song.genre_type from users, owns_song, song, has_genre_song where users.user_id = " +
+                "owns_song.user_id and owns_song.song_id = song.song_id and song.song_id = has_genre_song.song_id " +
+                "and users.user_id = " + user.getID() + " group by has_genre_song.genre_type order by " +
+                "count(has_genre_song.genre_type) desc limit 1)) and song.song_id not in (select owns_song.song_id from " +
+                "owns_song where owns_song.user_id = " + user.getID() + ") limit 10");
+        ArrayList<String> songs = new ArrayList<>();
+        while (set.next()) {
+            songs.add(set.getString(1));
+        }
+        return songs;
     }
 
 }
