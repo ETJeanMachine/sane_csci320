@@ -3,6 +3,7 @@ package ui;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
@@ -72,24 +73,44 @@ public class DatabaseGUI extends BorderPane {
             Text songLen = new Text("Mean User Song Length: " + db.meanSongLength(currentUser));
             songLen.setFont(MainGUI.mainFont);
 
+            GridPane dataAnalytics = new GridPane();
+            dataAnalytics.setAlignment(Pos.CENTER);
+            dataAnalytics.setPrefSize(MainGUI.GUI_WIDTH, 400);
+
+            VBox ownedGenres = new VBox();
             Text ownedGenresText = new Text("Most Owned Genres: ");
             ownedGenresText.setFont(MainGUI.boldFont);
-            ListView<?> ownedGenres = listContent(db.mostOwnedGenres(currentUser));
+            ListView<?> ownedGenresList = listContent(db.mostOwnedGenres(currentUser));
+            ownedGenres.getChildren().addAll(ownedGenresText, ownedGenresList);
 
+            VBox ownedArtists = new VBox();
             Text ownedArtistsText = new Text("Most Owned Artists: ");
             ownedArtistsText.setFont(MainGUI.boldFont);
-            ListView<?> ownedArtists = listContent(db.mostOwnedArtists(currentUser));
+            ListView<?> ownedArtistsList = listContent(db.mostOwnedArtists(currentUser));
+            ownedArtists.getChildren().addAll(ownedArtistsText, ownedArtistsList);
 
+            dataAnalytics.addRow(0, ownedGenres, ownedArtists);
+
+            VBox playedSongs = new VBox();
             Text playedSongsText = new Text("Most Played Songs: ");
             playedSongsText.setFont(MainGUI.boldFont);
-            ListView<?> playedSongs = listContent(db.mostPlayedSongs(currentUser));
+            ListView<?> playedSongsList = listContent(db.mostPlayedSongs(currentUser));
+            playedSongs.getChildren().addAll(playedSongsText, playedSongsList);
 
+            VBox playedGenres = new VBox();
             Text playedGenresText = new Text("Most Played Genres: ");
             playedGenresText.setFont(MainGUI.boldFont);
-            ListView<?> playedGenres = listContent(db.mostPlayedGenres(currentUser));
+            ListView<?> playedGenresList = listContent(db.mostPlayedGenres(currentUser));
+            playedGenres.getChildren().addAll(playedGenresText, playedGenresList);
 
-            analyticBox.getChildren().addAll(lengths, albumLem, songLen, ownedGenresText, ownedGenres, ownedArtistsText,
-                    ownedArtists, playedSongsText, playedSongs, playedGenresText, playedGenres);
+            dataAnalytics.addRow(1, playedSongs, playedGenres);
+
+            Text recommendText = new Text("Recommended Songs: ");
+            recommendText.setFont(MainGUI.boldFont);
+            ObservableList<String> items = FXCollections.observableArrayList(db.recommendedSongs(currentUser));
+            ListView<String> recommendedSongs = new ListView<>(items);
+
+            analyticBox.getChildren().addAll(lengths, albumLem, dataAnalytics, recommendText, recommendedSongs);
         } else {
             Text totalGenres = new Text("Most Played Genres Globally: ");
             totalGenres.setFont(MainGUI.boldFont);
