@@ -1,6 +1,7 @@
 package ui;
 
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -8,6 +9,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Popup;
+import javafx.util.Pair;
 import model.*;
 
 import java.sql.SQLException;
@@ -29,7 +31,7 @@ public class DatabaseGUI extends BorderPane {
      *
      * @param db the database of the GUI.
      */
-    public DatabaseGUI(Database db) {
+    public DatabaseGUI(Database db) throws SQLException {
         this.db = db;
         renderGUI();
     }
@@ -46,7 +48,7 @@ public class DatabaseGUI extends BorderPane {
     /**
      * This renders the GUI.
      */
-    private void renderGUI() {
+    private void renderGUI() throws SQLException {
         Menu userMenu = new Menu("Users");
         MenuItem loginUser = new MenuItem("Login");
         loginUser.setOnAction(actionEvent -> {
@@ -56,7 +58,45 @@ public class DatabaseGUI extends BorderPane {
         userMenu.getItems().add(loginUser);
         menuBar.getMenus().addAll(userMenu);
         renderBrowse();
+        renderAnalytics();
         setTop(menuBar);
+    }
+
+    private void renderAnalytics() throws SQLException {
+        VBox analyticBox = new VBox();
+        if(currentUser != null) {
+            Text lengths = new Text("Mean Lengths: ");
+            lengths.setFont(MainGUI.boldFont);
+            Text albumLem = new Text("Mean User Album Length: " + db.meanAlbumLength(currentUser));
+            albumLem.setFont(MainGUI.mainFont);
+            Text songLen = new Text("Mean User Song Length: " + db.meanSongLength(currentUser));
+            songLen.setFont(MainGUI.mainFont);
+
+            Text ownedGenresText = new Text("Most Owned Genres: ");
+            ownedGenresText.setFont(MainGUI.boldFont);
+            ListView<?> ownedGenres = listContent(db.mostOwnedGenres(currentUser));
+
+            Text ownedArtistsText = new Text("Most Owned Artists: ");
+            ownedArtistsText.setFont(MainGUI.boldFont);
+            ListView<?> ownedArtists = listContent(db.mostOwnedArtists(currentUser));
+
+            Text playedSongsText = new Text("Most Played Songs: ");
+            playedSongsText.setFont(MainGUI.boldFont);
+            ListView<?> playedSongs = listContent(db.mostPlayedSongs(currentUser));
+
+            Text playedGenresText = new Text("Most Played Genres: ");
+            playedGenresText.setFont(MainGUI.boldFont);
+            ListView<?> playedGenres = listContent(db.mostPlayedGenres(currentUser));
+
+            analyticBox.getChildren().addAll(lengths, albumLem, songLen, ownedGenresText, ownedGenres, ownedArtistsText,
+                    ownedArtists, playedSongsText, playedSongs, playedGenresText, playedGenres);
+        } else {
+            Text totalGenres = new Text("Most Played Genres Globally: ");
+            totalGenres.setFont(MainGUI.boldFont);
+            analyticBox.getChildren().add(totalGenres);
+            analyticBox.getChildren().add(listContent(db.totalGenreOwnership()));
+        }
+        setCenter(analyticBox);
     }
 
     /**
@@ -302,6 +342,7 @@ public class DatabaseGUI extends BorderPane {
                 currentUser = db.fetchUser(id);
                 popup.hide();
                 renderLibrary();
+                renderAnalytics();
             } catch (SQLException e) {
                 content.getChildren().add(1, MainGUI.error("Internal database error!"));
                 e.printStackTrace();
@@ -321,5 +362,10 @@ public class DatabaseGUI extends BorderPane {
         popup.getContent().add(content);
         popup.centerOnScreen();
         return popup;
+    }
+
+    private ListView<Pair<String, Integer>> listContent(ArrayList<Pair<String, Integer>> list) {
+        ObservableList<Pair<String, Integer>> items = FXCollections.observableArrayList(list);
+        return new ListView<>(items);
     }
 }

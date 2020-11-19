@@ -458,6 +458,11 @@ public class Database {
         return genres;
     }
 
+    /**
+     * Gets the total genre ownership for the entire database.
+     * @return An arraylist of genres and their ownership counts.
+     * @throws SQLException if there is an error in parsing the data.
+     */
     public ArrayList<Pair<String, Integer>> totalGenreOwnership() throws SQLException {
         Statement stmt = connection.createStatement();
         ResultSet set = stmt.executeQuery("select has_genre_song.genre_type, count(has_genre_song.genre_type) from " +

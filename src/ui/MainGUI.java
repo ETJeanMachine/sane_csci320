@@ -26,6 +26,7 @@ public class MainGUI extends Application {
     public static final int GUI_HEIGHT = 600;
     public static Stage stage;
     public static final Font mainFont = new Font("Arial", 14);
+    public static final Font boldFont = new Font("Arial Bold", 14);
 
 
     //
